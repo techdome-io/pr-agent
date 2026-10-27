@@ -11,6 +11,8 @@ export const SEQUENTIAL_TOOL_NAMES: ReadonlySet<string> = new Set([
   "submitDescription",
   "submitTriage",
   "submitVerification",
+  "httpRequest",
+  "submitQaReport",
 ]);
 
 export type ToolExecutionMode = "sequential" | "parallel";

@@ -34,6 +34,7 @@ describe("feature config", () => {
       verification: "auto",
       ask: "manual",
       triage: "manual",
+      qa: "off",
       reviewLabels: "size",
       commitStatus: false,
       titleRewrite: true,

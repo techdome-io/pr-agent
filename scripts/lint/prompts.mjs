@@ -16,6 +16,7 @@ export const PROMPT_ROLES = [
   "triage",
   "verification",
   "description",
+  "qa",
   "ci",
   "judge",
   "compaction",

@@ -7,6 +7,7 @@ import {
   DEFAULT_INSTALLATION_GROUP_CONCURRENCY,
   DEFAULT_PR_ACTOR_LEASE_RENEWAL_INTERVAL_SECONDS,
   DEFAULT_PR_ACTOR_LEASE_TTL_SECONDS,
+  DEFAULT_QA_CONCURRENCY,
   DEFAULT_QUEUE_DELETE_AFTER_SECONDS,
   DEFAULT_QUEUE_EXPIRE_IN_SECONDS,
   DEFAULT_QUEUE_HEARTBEAT_SECONDS,
@@ -52,6 +53,7 @@ export type ConcurrencySlice = {
   readonly description: number;
   readonly triage: number;
   readonly verification: number;
+  readonly qa: number;
   readonly installationGroup: number;
 };
 
@@ -162,6 +164,7 @@ export function readConcurrencySlice(): ConcurrencySlice {
       ENV.VERIFICATION_CONCURRENCY,
       DEFAULT_VERIFICATION_CONCURRENCY,
     ),
+    qa: readPositiveNumber(ENV.QA_CONCURRENCY, DEFAULT_QA_CONCURRENCY),
     installationGroup: readPositiveNumber(
       ENV.INSTALLATION_GROUP_CONCURRENCY,
       DEFAULT_INSTALLATION_GROUP_CONCURRENCY,

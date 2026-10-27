@@ -1,13 +1,13 @@
 # Features
 
-The nine `FEATURE_*` settings are pr-agent's entire user-facing configuration.
+The ten `FEATURE_*` settings are pr-agent's entire user-facing configuration.
 Everything else is deployment wiring or operator tuning (see
 [configuration.md](configuration.md)).
 
 Modes for describe and verification: `off` = disabled entirely (slash
 commands reply with a notice, nothing runs), `manual` = slash command only,
-`auto` = slash command plus an automatic trigger. `FEATURE_ASK` and
-`FEATURE_TRIAGE` accept only `off` or `manual`. `auto` is invalid and crashes
+`auto` = slash command plus an automatic trigger. `FEATURE_ASK`,
+`FEATURE_TRIAGE`, and `FEATURE_QA` accept only `off` or `manual`. `auto` is invalid and crashes
 startup. `FEATURE_REVIEW` accepts `manual`, `auto`, or `approval`. `off` is
 invalid and crashes startup.
 `/review` is available in every review mode on open PRs. Auto triggers are fixed: review and describe fire when
@@ -73,6 +73,7 @@ thread. The join lasts until the work item is purged by
 | `FEATURE_VERIFICATION`   | `off` \| `manual` \| `auto`        | `auto`     | yes                    | Re-checks open findings on synchronize or on-demand `/verify`. Silently resolves fixed threads, except one reply to an unanswered finding objection. Edits verification stubs. Terminal failure edits the CI cell or one stub line. `off` does not cancel work already queued.      |
 | `FEATURE_ASK`            | `off` \| `manual`                  | `manual`   | yes                    | `/ask` and App-bot mention question threads.                                                                                                                                                                                                                                        |
 | `FEATURE_TRIAGE`         | `off` \| `manual`                  | `manual`   | yes                    | `/triage` autofix plus `/triage preview` then `/triage all` (preview required before bulk).                                                                                                                                                                                         |
+| `FEATURE_QA`             | `off` \| `manual`                  | `off`      | yes                    | `/qa` builds the pull request head in a throwaway Docker sandbox, calls its API as each test user from `.pr-agent/qa.md` on the base branch, and upserts `## PR Agent QA`. Same-repo pull requests only. Runs pull request code on the worker host (ADR 0062).                      |
 | `FEATURE_REVIEW_LABELS`  | `off` \| `size` \| `size+security` | `size`     | no                     | Size and security labels. `off` still syncs `Category: bug\|security\|performance\|style` when a finding has a category or a managed category label already exists.                                                                                                                 |
 | `FEATURE_COMMIT_STATUS`  | `false` \| `true`                  | `false`    | no                     | Posts `pr-agent/review` on the PR head. `pending` when admitted review work starts, independently of Checks access. `success` or `failure` from published findings. `error` on cancel, supersede, stale head, crash, unpublished, or partial coverage. Usable in branch protection. |
 | `FEATURE_TITLE_REWRITE`  | `false` \| `true`                  | `true`     | no                     | Allows `/describe` to rewrite the PR title using make-pr default title rules (imperative sentence case, no type prefix, no trailing period, at most 60 characters). Set `false` to keep the existing title.                                                                         |

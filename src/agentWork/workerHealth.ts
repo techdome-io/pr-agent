@@ -9,6 +9,7 @@ import {
   DEFAULT_PR_ACTOR_LEASE_TTL_SECONDS,
   DESCRIPTION_QUEUE,
   HEALTH_DB_PING_TIMEOUT_MS,
+  QA_QUEUE,
   RETENTION_QUEUE,
   REVIEW_QUEUE,
   STALE_QUEUED_WORK_BATCH_SIZE,
@@ -28,6 +29,7 @@ export const WORKER_CONSUMER_QUEUES = [
   DESCRIPTION_QUEUE,
   TRIAGE_QUEUE,
   VERIFICATION_QUEUE,
+  QA_QUEUE,
   RETENTION_QUEUE,
 ] as const;
 
@@ -38,6 +40,7 @@ export const WORKER_DIAGNOSTIC_QUEUES = [
   DESCRIPTION_QUEUE,
   TRIAGE_QUEUE,
   VERIFICATION_QUEUE,
+  QA_QUEUE,
   CI_PROJECTION_QUEUE,
   RETENTION_QUEUE,
 ] as const;
@@ -221,7 +224,7 @@ export async function collectQueueDiagnostics(params: {
               w.type AS work_type,
               EXTRACT(EPOCH FROM ($1::timestamptz - w.created_at)) AS age_seconds
          FROM agent_work_items w
-        WHERE w.type IN ('review', 'description', 'triage', 'verification')
+        WHERE w.type IN ('review', 'description', 'triage', 'verification', 'qa')
           AND w.status = 'queued'
           AND w.created_at < $1::timestamptz - ($2 * interval '1 second')
           AND NOT EXISTS (
@@ -238,6 +241,7 @@ export async function collectQueueDiagnostics(params: {
                WHEN 'description' THEN '${DESCRIPTION_QUEUE}'
                WHEN 'triage' THEN '${TRIAGE_QUEUE}'
                WHEN 'verification' THEN '${VERIFICATION_QUEUE}'
+               WHEN 'qa' THEN '${QA_QUEUE}'
              END
                AND j.state IN ('created', 'active', 'retry')
                AND (
@@ -271,7 +275,7 @@ export async function collectQueueDiagnostics(params: {
               w.type AS work_type,
               EXTRACT(EPOCH FROM ($1::timestamptz - w.started_at)) AS age_seconds
          FROM agent_work_items w
-        WHERE w.type IN ('review', 'description', 'triage', 'verification')
+        WHERE w.type IN ('review', 'description', 'triage', 'verification', 'qa')
           AND w.status = 'running'
           AND w.started_at IS NOT NULL
           AND w.started_at < $1::timestamptz - ($2 * interval '1 second')

@@ -29,6 +29,7 @@ import {
   readContext7Slice,
   readLoggingSlice,
   readPosthogSlice,
+  readQaSlice,
   readReviewSlice,
   readRuntimeSlice,
   type AgentEventsSlice,
@@ -36,6 +37,7 @@ import {
   type Context7Slice,
   type LoggingSlice,
   type PosthogSlice,
+  type QaSlice,
   type ReviewSlice,
   type RuntimeSlice,
 } from "./slices/service.ts";
@@ -56,6 +58,7 @@ export type Config = {
   readonly queue: QueueSlice;
   readonly retention: RetentionSlice;
   readonly context7: Context7Slice;
+  readonly qa: QaSlice;
   readonly posthog: PosthogSlice;
   readonly logging: LoggingSlice;
 };
@@ -83,6 +86,7 @@ export async function loadConfig(): Promise<Config> {
     queue: readQueueSlice(),
     retention,
     context7: readContext7Slice(),
+    qa: readQaSlice(),
     posthog: readPosthogSlice(),
     logging: readLoggingSlice(),
   };

@@ -19,6 +19,7 @@ export function reactionTargetsForWorkItem(item: AgentWorkItem): readonly AckTar
     case "review":
     case "description":
     case "verification":
+    case "qa":
       break;
     default: {
       const exhaustive: never = item;

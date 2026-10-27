@@ -105,6 +105,13 @@ export const APP_ERROR_KINDS = {
     "request_failed",
   ],
   publish_store: ["invalid_detail"],
+  qa: [
+    "aborted",
+    "docker_request_failed",
+    "docker_timeout",
+    "publish_superseded",
+    "validation_failed",
+  ],
   review: [
     "declare_duplicate_validation_failed",
     "deterministic_finding_publish_failed",

@@ -12,6 +12,7 @@ const SESSION_ROLES = {
   description: true,
   triage: true,
   verification: true,
+  qa: true,
   ci_summary: true,
 } satisfies Record<AgentSessionRole, true>;
 
@@ -26,6 +27,7 @@ const SESSION_PHASES = {
   description: true,
   triage: true,
   verification: true,
+  qa: true,
   ci_summary: true,
 } satisfies Record<AgentSessionPhase, true>;
 

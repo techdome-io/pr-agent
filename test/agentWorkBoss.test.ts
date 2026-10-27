@@ -44,6 +44,8 @@ import {
   CI_PROJECTION_QUEUE,
   DESCRIPTION_DEAD_LETTER_QUEUE,
   DESCRIPTION_QUEUE,
+  QA_DEAD_LETTER_QUEUE,
+  QA_QUEUE,
   REVIEW_DEAD_LETTER_QUEUE,
   REVIEW_QUEUE,
   TRIAGE_DEAD_LETTER_QUEUE,
@@ -103,6 +105,7 @@ describe("ensureAgentQueues", () => {
       DESCRIPTION_DEAD_LETTER_QUEUE,
       TRIAGE_DEAD_LETTER_QUEUE,
       VERIFICATION_DEAD_LETTER_QUEUE,
+      QA_DEAD_LETTER_QUEUE,
       CI_PROJECTION_DEAD_LETTER_QUEUE,
     ];
     const parentQueues = [
@@ -112,6 +115,7 @@ describe("ensureAgentQueues", () => {
       DESCRIPTION_QUEUE,
       TRIAGE_QUEUE,
       VERIFICATION_QUEUE,
+      QA_QUEUE,
       CI_PROJECTION_QUEUE,
     ];
 
@@ -165,6 +169,7 @@ describe("ensureAgentQueues", () => {
         policy: "standard",
         deadLetter: VERIFICATION_DEAD_LETTER_QUEUE,
       }),
+      expect.objectContaining({ policy: "standard", deadLetter: QA_DEAD_LETTER_QUEUE }),
       expect.objectContaining({
         policy: "standard",
         deadLetter: CI_PROJECTION_DEAD_LETTER_QUEUE,

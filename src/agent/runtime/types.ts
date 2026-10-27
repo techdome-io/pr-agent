@@ -14,6 +14,7 @@ export type AgentSessionRole =
   | "description"
   | "triage"
   | "verification"
+  | "qa"
   | "ci_summary";
 
 export type ModelAssignment = {
@@ -32,6 +33,7 @@ export type AgentSessionPhase =
   | "description"
   | "triage"
   | "verification"
+  | "qa"
   | "ci_summary";
 
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
@@ -95,6 +97,7 @@ export const DEFAULT_THINKING_POLICY: ThinkingPolicy = {
       case "judgment":
       case "ask":
       case "triage":
+      case "qa":
         return "medium";
       case "synthesis":
       case "validation_repair":

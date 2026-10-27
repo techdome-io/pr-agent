@@ -3,7 +3,7 @@ import type { ReviewRunMetricsSnapshot } from "../review/run/reviewRunMetrics.ts
 import { MAX_LOG_MESSAGE_LEN } from "../settings/index.ts";
 import { captureEvent } from "./index.ts";
 
-export type TelemetryWorkType = "review" | "ask" | "description" | "triage" | "verification";
+export type TelemetryWorkType = "review" | "ask" | "description" | "triage" | "verification" | "qa";
 
 export type WorkCompletedOutcome =
   | "published"
@@ -109,6 +109,10 @@ export type WorkCompletion =
       readonly objectionsDeferredByCap?: number;
       readonly objectionsSkippedIncomplete?: number;
     } & (PublishedCompletion | DurableDegradedCompletion))
+  | ({ readonly kind: "qa"; readonly checks?: number; readonly failedChecks?: number } & (
+      | PublishedCompletion
+      | DurableDegradedCompletion
+    ))
   | ({
       readonly kind: "review-profile";
       readonly durationMs: number;
@@ -244,6 +248,11 @@ function completionProperties(
         ...(completion.objectionsSkippedIncomplete != null
           ? { objections_skipped_incomplete: completion.objectionsSkippedIncomplete }
           : {}),
+      };
+    case "qa":
+      return {
+        ...(completion.checks != null ? { checks: completion.checks } : {}),
+        ...(completion.failedChecks != null ? { failed_checks: completion.failedChecks } : {}),
       };
     case "failure":
       return {};

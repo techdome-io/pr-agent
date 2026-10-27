@@ -1016,6 +1016,7 @@ describe.skipIf(!hasDatabase)("intake transaction (integration)", () => {
         "- `/triage preview` - render the would-be unified diff for eligible findings. No commits, no push.",
         "- `/triage all` - apply the previewed set (one commit per finding). Optional `exclude <thread ids>`. Refused without a matching `/triage preview` on this head.",
         "- `/verify` - verify open findings against the current pull request head",
+        "- `/qa` - boot this pull request in a throwaway sandbox, call its API as each test user, and report what works and what breaks. Needs `.pr-agent/qa.md` on the base branch.",
         "",
         "Notes:",
         "- What runs automatically depends on the `FEATURE_*` settings (see docs/features.md). Review and describe fire on PR open in `auto` mode; later pushes need a manual `/review`.",

@@ -2,6 +2,7 @@ import {
   readRepositorySource,
   createPinnedRepositoryReader,
   runWorkspaceGit,
+  runWorkspaceGitBytes,
   workspaceGitFailureKind,
   type ChangedFileStatus,
   type LocalPrChangedFile,
@@ -32,10 +33,17 @@ import {
   LOCAL_WORKSPACE_STALE_CLEANUP_AGE_SECONDS,
   LOCAL_WORKSPACE_SYMBOL_INDEX_BUILD_TIMEOUT_MS,
   LOCAL_WORKSPACE_SYMBOL_INDEX_MAX_SYMBOLS,
+  QA_CONFIG_MAX_BYTES,
+  QA_CONFIG_PATH,
 } from "../settings/index.ts";
 import { AppError, isAppError } from "../errors/appError.ts";
 import { logWarn } from "../evlog.ts";
-import { readBasePolicySnapshot, type PolicySnapshot } from "./policySnapshot.ts";
+import {
+  readBaseFile,
+  readBasePolicySnapshot,
+  type BaseFileSnapshot,
+  type PolicySnapshot,
+} from "./policySnapshot.ts";
 import {
   failedFetchAttempt,
   succeededFetchAttempt,
@@ -136,8 +144,15 @@ export type LocalPrWorkspace = {
   readonly agentCwd: string;
   readonly reader: PinnedRepositoryReader;
   readonly policySnapshot: PolicySnapshot;
+  readonly qaSource?: QaWorkspaceSource;
   readonly checkoutTelemetry: WorkspaceCheckoutTelemetry;
   readonly cleanup: () => Promise<void>;
+};
+
+export type QaWorkspaceSource = {
+  readonly config: BaseFileSnapshot;
+  readonly checkoutMode: LocalPrWorkspaceCheckoutMode;
+  readonly archiveHead: (maxBytes: number, timeoutMs: number) => Promise<Buffer>;
 };
 export type PrepareLocalPrWorkspaceParams = {
   readonly owner: string;
@@ -457,6 +472,13 @@ async function finishLocalPrWorkspace(
     maxFetchBytes: params.maxFetchBytes ?? LOCAL_WORKSPACE_MAX_FETCH_BYTES,
     timeoutMs: fetchTimeoutMs,
   });
+  const qaConfig = await readBaseFile({
+    snapshot: policySnapshot,
+    path: QA_CONFIG_PATH,
+    maxBytes: QA_CONFIG_MAX_BYTES,
+    git,
+    timeoutMs: fetchTimeoutMs,
+  });
 
   await credentials.cleanup();
   checkoutPaths = await prepareCheckedOutTree(agentCwd);
@@ -521,6 +543,18 @@ async function finishLocalPrWorkspace(
     agentCwd,
     reader: readerResource.reader,
     policySnapshot,
+    qaSource: {
+      config: qaConfig,
+      checkoutMode,
+      archiveHead: (maxBytes, timeoutMs) =>
+        runWorkspaceGitBytes(["archive", "--format=tar", headSha], {
+          gitDir: privateGitDir,
+          cwd: privateGitDir,
+          timeoutMs,
+          maxBufferBytes: maxBytes,
+          checkoutMode,
+        }),
+    },
     checkoutTelemetry: checkoutTelemetrySnapshot(recorder),
     cleanup: async () => {
       readerResource.dispose();

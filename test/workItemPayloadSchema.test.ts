@@ -33,6 +33,7 @@ const validByType = {
   description: () => makeDescriptionWorkItem().payload,
   triage: () => makeTriageWorkItem().payload,
   verification: () => makeVerificationWorkItem().payload,
+  qa: () => ({ source: "slash", userSupplement: "User invoked /qa with:\n/qa", commenterId: 7 }),
 } as const satisfies Record<WorkType, () => unknown>;
 
 describe("parseWorkItemPayload", () => {

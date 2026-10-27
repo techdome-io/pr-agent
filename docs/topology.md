@@ -70,6 +70,7 @@ flowchart LR
   Lease --> Executor[feature executor]
   Executor --> Pi[Pi runtime]
   Executor --> Surface[PrSurface]
+  Executor --> Sandbox[Docker Engine QA sandbox]
   Surface --> GitHub
 ```
 
@@ -88,9 +89,11 @@ sources need a fresh complete listing. Verification signal transitions share the
 head revision and enqueue transaction. See
 [ADR 0035](adr/0035-head-ci-state-projection.md).
 
+QA work (`/qa`, [ADR 0062](adr/0062-qa-sandbox-work-type.md)) is leased like triage. Its executor reads `.pr-agent/qa.md` from the recorded base commit, copies the head commit into a per-run Docker network through the Engine socket (`QA_DOCKER_SOCKET`), and reaches the app only through Engine exec inside the app container. Every container and the network carry the work item label and are removed when the run ends.
+
 Ask work is deliberately unleased and relies on publish-record idempotency. Canonical ask intake resolves the triggering mention — installation, PR resource, comment surface, and comment ID — under a transaction-scoped advisory lock before quota admission, so repeated accepted deliveries of one mention quietly join its retained work item in any status instead of creating a sibling; the agreement ends when retention deletes the item. Triage may push a branch and uses separate publish records for thread actions.
 
-A slash `/review`, `/describe`, `/triage`, or `/verify` that reaches insertion
+A slash `/review`, `/describe`, `/triage`, `/verify`, or `/qa` that reaches insertion
 resolves active work in one value-preserving UPSERT. Its conflict row stays
 locked through intake commit, including triage's ID-pinned payload read.
 Cancellation or completion that finishes first allows a fresh item; otherwise
