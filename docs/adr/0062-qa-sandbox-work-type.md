@@ -22,7 +22,7 @@ That means running pull request code. ADR 0033 keeps every model-visible tool in
 
 5. **One model tool reaches the app.** The model keeps the read-only workspace tools description uses, plus `httpRequest`, which sends one request to the app as a named identity. The request runs inside the app container against `127.0.0.1` through `node`, so the worker never joins the sandbox network and the model cannot name another host. The app image must therefore ship Node 18 or later. Responses are truncated and token values are redacted before the model sees them. A run sends at most `QA_MAX_HTTP_REQUESTS` requests. The model ends with `submitQaReport`, which only validates and stores the report; the executor publishes it.
 
-6. **Publish is one upserted conversation comment.** `## PR Agent QA` lists each check as pass, fail, or blocked, with the requests behind it. The comment is advisory. It sets no check run and no commit status.
+6. **Publish is one upserted conversation comment.** While the run moves along, `## PR Agent QA` shows the current stage: creating the sandbox, each setup step, starting the app, and testing. Progress edits are best effort and never fail the run. The final report replaces that text and lists each check as pass, fail, or blocked, with the requests behind it. A terminal failure edits the comment to a not-finished notice when one exists. The comment is advisory. It sets no check run and no commit status.
 
 ## Failure modes
 

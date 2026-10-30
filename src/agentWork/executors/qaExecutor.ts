@@ -2,7 +2,14 @@ import type { WorkExecution, WorkExecutionDependencies } from "../workDefinition
 import type { DurableExecutionResult } from "../durableJob.ts";
 import type { QaWorkItem } from "../types.ts";
 import { runQa } from "../../agent/qa/qaRun.ts";
-import { publishQaReport, renderQaReport, type QaOutcome } from "../../agent/qa/publishQa.ts";
+import {
+  publishQaFailureNotice,
+  publishQaProgress,
+  publishQaReport,
+  renderQaReport,
+  type QaOutcome,
+  type QaProgressStage,
+} from "../../agent/qa/publishQa.ts";
 import { pullRequestBranchInfo } from "../../github/listPullRequestFiles.ts";
 import type { PrRepositoryView } from "../../prWorkspace/prRepositoryView.ts";
 import { createDockerEngine } from "../../qaSandbox/dockerEngine.ts";
@@ -16,6 +23,11 @@ import {
 } from "../../settings/index.ts";
 
 type QaExecutionContext = Parameters<WorkExecution<"qa">["execute"]>[1];
+
+async function showProgress(env: QaExecutionContext, stage: QaProgressStage): Promise<void> {
+  if (await env.shouldAbortPublish().catch(() => true)) return;
+  await publishQaProgress({ prSurface: env.prSurface, headSha: env.headSha, stage });
+}
 
 export function createQaWorkExecution({
   cfg,
@@ -79,9 +91,11 @@ export function createQaWorkExecution({
         archive,
         runId: item.id,
         signal: env.signal,
+        onStage: (stage) => showProgress(env, stage),
       },
       async (sandbox): Promise<QaOutcome> => {
         if (sandbox.kind !== "ready") return sandbox;
+        await showProgress(env, { kind: "testing" });
         const result = await runQa({
           cfg,
           workspace: view.workspace,
@@ -125,6 +139,7 @@ export function createQaWorkExecution({
     },
     onTerminalFailure: async (item, prSurface) => {
       if (!prSurface) return;
+      await publishQaFailureNotice(prSurface);
       await prSurface.replyAt(
         { kind: "prConversation", prNumber: item.prNumber },
         QA_FAILURE_MESSAGE,

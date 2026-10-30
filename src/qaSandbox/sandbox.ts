@@ -68,12 +68,23 @@ export type QaSandboxOutcome =
     }
   | { readonly kind: "start_failed"; readonly reason: string; readonly logTail: string };
 
+export type QaSandboxStage =
+  | { readonly kind: "creating" }
+  | {
+      readonly kind: "setup";
+      readonly index: number;
+      readonly total: number;
+      readonly step: string;
+    }
+  | { readonly kind: "starting_app" };
+
 export type QaSandboxParams = {
   readonly engine: DockerEngine;
   readonly config: QaConfig;
   readonly archive: Buffer;
   readonly runId: string;
   readonly signal?: AbortSignal;
+  readonly onStage?: (stage: QaSandboxStage) => Promise<void>;
 };
 
 function tail(text: string): string {
@@ -128,13 +139,14 @@ export async function withQaSandbox<T>(
   params: QaSandboxParams,
   run: (outcome: QaSandboxOutcome) => Promise<T>,
 ): Promise<T> {
-  const { engine, config, signal } = params;
+  const { engine, config, signal, onStage } = params;
   const baseName = `pr-agent-qa-${params.runId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`;
   const labels = { "pr-agent.qa": params.runId };
   const containers: string[] = [];
   let networkId: string | null = null;
 
   try {
+    await onStage?.({ kind: "creating" });
     await engine.ensureImage(config.app.image, QA_IMAGE_PULL_TIMEOUT_MS);
     if (config.database) await engine.ensureImage(config.database.image, QA_IMAGE_PULL_TIMEOUT_MS);
     throwIfAborted(signal);
@@ -206,8 +218,9 @@ export async function withQaSandbox<T>(
       QA_ARCHIVE_UPLOAD_TIMEOUT_MS,
     );
 
-    for (const step of config.app.setup) {
+    for (const [index, step] of config.app.setup.entries()) {
       throwIfAborted(signal);
+      await onStage?.({ kind: "setup", index: index + 1, total: config.app.setup.length, step });
       const result = await engine.exec(appId, {
         cmd: ["sh", "-lc", step],
         workdir: QA_WORKSPACE_DIR,
@@ -225,6 +238,7 @@ export async function withQaSandbox<T>(
     }
 
     throwIfAborted(signal);
+    await onStage?.({ kind: "starting_app" });
     await engine.execDetached(appId, {
       cmd: ["sh", "-lc", `${config.app.start} > ${APP_LOG_PATH} 2>&1`],
       workdir: QA_WORKSPACE_DIR,

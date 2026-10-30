@@ -49,7 +49,7 @@ export type QaConfigResult =
   | { readonly kind: "invalid"; readonly reason: string };
 
 export function parseQaConfig(raw: string): QaConfigResult {
-  const text = raw.replace(/^﻿/, "");
+  const text = raw.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
   if (!text.startsWith("---")) return { kind: "invalid", reason: "missing YAML frontmatter" };
   const end = text.indexOf("\n---", 3);
   if (end === -1) return { kind: "invalid", reason: "unclosed YAML frontmatter" };

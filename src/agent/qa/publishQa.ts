@@ -16,8 +16,13 @@ import {
   renderGitHubAlert,
 } from "../../github/markdownFormat.ts";
 import { redactReviewText } from "../../review/findings/reviewPublicOutput.ts";
+import { errorMessage } from "../../errors/errorMessage.ts";
+import { logWarn } from "../../evlog.ts";
+import { sanitizeLogMessage } from "../../security/sanitizeLogMessage.ts";
+import type { QaSandboxStage } from "../../qaSandbox/sandbox.ts";
 import {
   QA_CONFIG_PATH,
+  QA_FAILURE_MESSAGE,
   QA_PUBLISH_LENS,
   QA_REPORT_HEADER,
   QA_REPORT_MAX_CHARS,
@@ -199,6 +204,75 @@ export function renderQaReport(outcome: QaOutcome, headSha: string): string {
   return redacted.length <= QA_REPORT_MAX_CHARS
     ? redacted
     : `${redacted.slice(0, QA_REPORT_MAX_CHARS)}\n\n…report truncated.`;
+}
+
+export type QaProgressStage = QaSandboxStage | { readonly kind: "testing" };
+
+const PROGRESS_STEP_CHARS = 80;
+
+function progressLine(stage: QaProgressStage): string {
+  switch (stage.kind) {
+    case "creating":
+      return "Creating the sandbox. The first run also downloads images.";
+    case "setup": {
+      const step = stage.step.replace(/\s+/g, " ").replace(/`/g, "'").slice(0, PROGRESS_STEP_CHARS);
+      return `Setup step ${stage.index} of ${stage.total}: \`${step}\``;
+    }
+    case "starting_app":
+      return "Starting the app and signing in the test users.";
+    case "testing":
+      return "Testing the app as each test user.";
+    default: {
+      const exhaustive: never = stage;
+      return exhaustive;
+    }
+  }
+}
+
+export function renderQaProgress(stage: QaProgressStage, headSha: string): string {
+  return redactReviewText(
+    [
+      QA_REPORT_HEADER,
+      "",
+      renderGitHubAlert(
+        "NOTE",
+        `Running on \`${headSha.slice(0, 7)}\`. This comment updates as the run moves along and is replaced by the report when it ends.`,
+      ),
+      "",
+      `⏳ ${progressLine(stage)}`,
+    ].join("\n"),
+  );
+}
+
+export async function publishQaProgress(params: {
+  readonly prSurface: PrSurface;
+  readonly headSha: string;
+  readonly stage: QaProgressStage;
+}): Promise<void> {
+  try {
+    await params.prSurface.upsertProgressComment(
+      renderQaProgress(params.stage, params.headSha),
+      QA_REPORT_HEADER,
+    );
+  } catch (error) {
+    logWarn("qa_progress_publish_failed", {
+      stage: params.stage.kind,
+      message: sanitizeLogMessage(errorMessage(error)),
+    });
+  }
+}
+
+export async function publishQaFailureNotice(prSurface: PrSurface): Promise<void> {
+  try {
+    const existing = await prSurface.findProgressComment(QA_REPORT_HEADER);
+    if (existing == null) return;
+    await prSurface.editComment(
+      existing.id,
+      [QA_REPORT_HEADER, "", renderGitHubAlert("WARNING", QA_FAILURE_MESSAGE)].join("\n"),
+    );
+  } catch (error) {
+    logWarn("qa_failure_notice_failed", { message: sanitizeLogMessage(errorMessage(error)) });
+  }
 }
 
 export async function publishQaReport(params: {
