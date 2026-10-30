@@ -409,6 +409,15 @@ export async function runWorkspaceGit(
   };
 }
 
+export async function runWorkspaceGitBytes(
+  args: readonly string[],
+  opts: WorkspaceGitOptions,
+): Promise<Buffer> {
+  const result = await startWorkspaceGit(args, opts);
+  if (!isCleanExit(result)) throw workspaceGitFailure(result, workspaceGitOperation(args), opts);
+  return result.stdout;
+}
+
 export function workspaceGitFailureKind(error: unknown): WorkspaceGitFailureKind | null {
   if (!isAppError(error)) return null;
   if (error.code !== "pr_workspace.fetch_timeout" && error.code !== "pr_workspace.git_failed") {

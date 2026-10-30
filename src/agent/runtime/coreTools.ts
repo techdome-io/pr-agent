@@ -20,6 +20,7 @@ const TERMINAL_SUBMIT_TOOLS: ReadonlySet<string> = new Set([
   "submitDescription",
   "submitTriage",
   "submitVerification",
+  "submitQaReport",
 ]);
 
 function toolResultToText(result: unknown): string {

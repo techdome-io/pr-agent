@@ -19,6 +19,7 @@ export type Features = {
   readonly verification: VerificationFeatureMode;
   readonly ask: CommandFeatureMode;
   readonly triage: CommandFeatureMode;
+  readonly qa: CommandFeatureMode;
   readonly reviewLabels: ReviewLabelsMode;
   readonly commitStatus: boolean;
   readonly titleRewrite: boolean;
@@ -30,6 +31,7 @@ export const DEFAULT_FEATURE_DESCRIBE: DescribeFeatureMode = "auto";
 export const DEFAULT_FEATURE_VERIFICATION: VerificationFeatureMode = "auto";
 export const DEFAULT_FEATURE_ASK: CommandFeatureMode = "manual";
 export const DEFAULT_FEATURE_TRIAGE: CommandFeatureMode = "manual";
+export const DEFAULT_FEATURE_QA: CommandFeatureMode = "off";
 export const DEFAULT_FEATURE_REVIEW_LABELS: ReviewLabelsMode = "size";
 export const DEFAULT_FEATURE_COMMIT_STATUS = false;
 export const DEFAULT_FEATURE_TITLE_REWRITE = true;

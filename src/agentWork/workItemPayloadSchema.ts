@@ -7,6 +7,7 @@ import type {
   AgentWorkItemCore,
   AskWorkPayload,
   DescriptionWorkPayload,
+  QaWorkPayload,
   ReviewWorkPayload,
   StaleHeadReplacement,
   StaleHeadReplacementState,
@@ -187,6 +188,14 @@ const VerificationWorkPayloadSchema = v.looseObject({
   publishDegraded: v.optional(v.boolean()),
 });
 
+const QaWorkPayloadSchema = v.looseObject({
+  source: v.literal("slash"),
+  repositorySizeKb: v.optional(v.number()),
+  userSupplement: v.optional(v.string()),
+  commenterId: v.optional(v.pipe(v.number(), v.integer())),
+  ackTargets: v.optional(v.array(AckTargetSchema)),
+});
+
 export class WorkItemPayloadValidationError extends AppError {
   readonly workType: WorkType;
 
@@ -226,6 +235,7 @@ export function parseWorkItemPayload(type: "ask", raw: unknown): AskWorkPayload;
 export function parseWorkItemPayload(type: "description", raw: unknown): DescriptionWorkPayload;
 export function parseWorkItemPayload(type: "triage", raw: unknown): TriageWorkPayload;
 export function parseWorkItemPayload(type: "verification", raw: unknown): VerificationWorkPayload;
+export function parseWorkItemPayload(type: "qa", raw: unknown): QaWorkPayload;
 export function parseWorkItemPayload(
   type: WorkType,
   raw: unknown,
@@ -234,7 +244,8 @@ export function parseWorkItemPayload(
   | AskWorkPayload
   | DescriptionWorkPayload
   | TriageWorkPayload
-  | VerificationWorkPayload;
+  | VerificationWorkPayload
+  | QaWorkPayload;
 export function parseWorkItemPayload(
   type: WorkType,
   raw: unknown,
@@ -243,7 +254,8 @@ export function parseWorkItemPayload(
   | AskWorkPayload
   | DescriptionWorkPayload
   | TriageWorkPayload
-  | VerificationWorkPayload {
+  | VerificationWorkPayload
+  | QaWorkPayload {
   switch (type) {
     case "review":
       return parseWithSchema(type, ReviewWorkPayloadSchema, raw);
@@ -255,6 +267,8 @@ export function parseWorkItemPayload(
       return parseWithSchema(type, TriageWorkPayloadSchema, raw);
     case "verification":
       return parseWithSchema(type, VerificationWorkPayloadSchema, raw);
+    case "qa":
+      return parseWithSchema(type, QaWorkPayloadSchema, raw);
     default: {
       const exhaustive: never = type;
       throw new WorkItemPayloadValidationError(
@@ -282,6 +296,8 @@ export function attachWorkItemPayload(core: AgentWorkItemCore, raw: unknown): Ag
       return { ...core, payload: parseWorkItemPayload("triage", raw) };
     case "verification":
       return { ...core, payload: parseWorkItemPayload("verification", raw) };
+    case "qa":
+      return { ...core, payload: parseWorkItemPayload("qa", raw) };
     default: {
       const exhaustive: never = core;
       throw new WorkItemPayloadValidationError(

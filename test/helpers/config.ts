@@ -23,6 +23,7 @@ const baseTestConfig: Config = {
     verification: "auto",
     ask: "manual",
     triage: "manual",
+    qa: "off",
     reviewLabels: "size",
     commitStatus: false,
     titleRewrite: true,
@@ -57,6 +58,7 @@ const baseTestConfig: Config = {
     description: 1,
     triage: 1,
     verification: 1,
+    qa: 1,
     installationGroup: 2,
   },
   ask: {
@@ -93,6 +95,7 @@ const baseTestConfig: Config = {
     enabled: true,
   },
   context7: { apiKey: "" },
+  qa: { dockerSocket: "/var/run/docker.sock" },
   posthog: { projectToken: "", host: "" },
   logging: { level: "error", pretty: false, redact: true },
 };
@@ -119,6 +122,7 @@ export function makeTestConfig(overrides: TestConfigOverrides = {}): Config {
     queue: { ...base.queue, ...overrides.queue },
     retention: { ...base.retention, ...overrides.retention },
     context7: { ...base.context7, ...overrides.context7 },
+    qa: { ...base.qa, ...overrides.qa },
     posthog: { ...base.posthog, ...overrides.posthog },
     logging: { ...base.logging, ...overrides.logging },
   };

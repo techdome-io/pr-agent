@@ -5,6 +5,7 @@ import {
   DEFERRED_HEAD_SHA,
   DESCRIPTION_ALREADY_IN_PROGRESS,
   MAX_STORED_COMMENT_TEXT_LEN,
+  QA_ALREADY_IN_PROGRESS,
   TRIAGE_ALREADY_IN_PROGRESS,
   TRIAGE_FULL_RUN_IN_PROGRESS,
   TRIAGE_INLINE_USAGE_HINT,
@@ -31,6 +32,7 @@ import type { ReplyTarget } from "../types.ts";
 import {
   enqueueAck,
   enqueueDescription,
+  enqueueQa,
   enqueueReview,
   enqueueTriage,
   enqueueVerification,
@@ -40,6 +42,7 @@ import { promoteAskFromWebhookEvent } from "./askIntake.ts";
 import {
   cancelActiveReviews,
   createDescriptionWorkItem,
+  createQaWorkItem,
   createReviewWorkItem,
   createTriageWorkItem,
   createVerificationWorkItem,
@@ -195,6 +198,30 @@ async function handleSlashDescribe(ctx: SlashIntakeContext): Promise<void> {
       resourceKey,
       ...ctx.correlation,
     },
+  });
+}
+
+async function handleSlashQa(ctx: SlashIntakeContext): Promise<void> {
+  const resourceKey = prResourceKey(ctx.input.owner, ctx.input.repo, ctx.input.prNumber);
+  const insert = await createQaWorkItem(ctx.client, {
+    webhookEventId: ctx.eventId,
+    ref: ctx.ref,
+    userSupplement: clampStoredCommentText(`User invoked /qa with:\n${ctx.input.body}`),
+    commenterId: ctx.input.commenterId,
+    ackTargets: ctx.baseAck.targets,
+  });
+  if (!insert.created) {
+    await enqueueSlashAck(ctx, {
+      reply: { target: ctx.input.replyTarget, body: QA_ALREADY_IN_PROGRESS },
+    });
+    return;
+  }
+  const workItemId = insert.id;
+  await enqueueSlashAck(ctx, { workItemId });
+  await enqueueQa(ctx.boss, ctx.client, ctx.ref, workItemId, ctx.correlation);
+  ctx.events.push({
+    name: "agent_work_enqueued",
+    fields: { type: "qa", source: "slash", workItemId, resourceKey, ...ctx.correlation },
   });
 }
 
@@ -502,6 +529,7 @@ const SLASH_INTAKE_HANDLERS: Record<string, SlashIntakeHandler> = {
   review: handleSlashReview,
   cancel: handleSlashCancel,
   verify: handleSlashVerify,
+  qa: handleSlashQa,
 };
 
 export async function applySlashCommandIntake(
@@ -572,6 +600,7 @@ export async function applySlashCommandIntake(
       describe: features.describe === "off",
       triage: features.triage === "off",
       verify: features.verification === "off",
+      qa: features.qa === "off",
     };
     if (disabledByFeature[command]) {
       await enqueueSlashAck(ctx, {
@@ -614,6 +643,7 @@ function slashHelpLines(cadenceNote: string): string {
     "- `/triage preview` - render the would-be unified diff for eligible findings. No commits, no push.",
     "- `/triage all` - apply the previewed set (one commit per finding). Optional `exclude <thread ids>`. Refused without a matching `/triage preview` on this head.",
     "- `/verify` - verify open findings against the current pull request head",
+    "- `/qa` - boot this pull request in a throwaway sandbox, call its API as each test user, and report what works and what breaks. Needs `.pr-agent/qa.md` on the base branch.",
     "",
     "Notes:",
     `- ${cadenceNote}`,

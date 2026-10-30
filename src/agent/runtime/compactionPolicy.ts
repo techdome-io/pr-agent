@@ -8,6 +8,7 @@ const COMPACTION_ENABLED: Readonly<Record<AgentSessionRole, boolean>> = {
   triage: true,
   description: true,
   verification: true,
+  qa: true,
 };
 
 export function compactionPolicyForRole(role: AgentSessionRole): CompactionPolicy {

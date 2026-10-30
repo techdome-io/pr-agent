@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import type { WorkSource } from "../review/reviewSchema.ts";
 import {
   DESCRIPTION_QUEUE,
+  QA_QUEUE,
   REVIEW_QUEUE,
   TRIAGE_QUEUE,
   VERIFICATION_QUEUE,
@@ -24,6 +25,7 @@ export function lostRunningWorkLivenessSql(
                WHEN 'description' THEN '${DESCRIPTION_QUEUE}'
                WHEN 'triage' THEN '${TRIAGE_QUEUE}'
                WHEN 'verification' THEN '${VERIFICATION_QUEUE}'
+               WHEN 'qa' THEN '${QA_QUEUE}'
              END
                AND j.state IN ('created', 'active', 'retry')
                AND (

@@ -7,6 +7,7 @@ import type {
   AckTarget,
   AskWorkPayload,
   DescriptionWorkPayload,
+  QaWorkPayload,
   ReviewWorkPayload,
   TriageMode,
   TriageScope,
@@ -36,6 +37,11 @@ const VERIFICATION_SLASH_ACTIVE_INDEX_PREDICATE = `source = 'slash'
 
 const VERIFICATION_SLASH_ACTIVE_CONFLICT_TARGET = `(resource_key, type, review_lens)
      WHERE ${VERIFICATION_SLASH_ACTIVE_INDEX_PREDICATE}`;
+
+const QA_SLASH_ACTIVE_CONFLICT_TARGET = `(resource_key, type, review_lens)
+     WHERE source = 'slash'
+       AND type = 'qa'
+       AND status IN ('queued', 'running')`;
 
 const ASK_WEBHOOK_CONFLICT_TARGET = `(webhook_event_id)
 		   WHERE type = 'ask' AND webhook_event_id IS NOT NULL`;
@@ -145,6 +151,13 @@ type AgentWorkInsert =
       readonly conflict: "none" | "slash_active_verification";
     })
   | (AgentWorkInsertCommon & {
+      readonly type: "qa";
+      readonly source: "slash";
+      readonly reviewLens: null;
+      readonly payload: QaWorkPayload;
+      readonly conflict: "slash_active_qa";
+    })
+  | (AgentWorkInsertCommon & {
       readonly type: "ask";
       readonly source: "slash";
       readonly reviewLens: null;
@@ -216,6 +229,8 @@ async function insertAgentWorkItem(
       return insertOnSlashActiveConflict(client, values, SLASH_ACTIVE_CONFLICT_TARGET);
     case "slash_active_verification":
       return insertOnSlashActiveConflict(client, values, VERIFICATION_SLASH_ACTIVE_CONFLICT_TARGET);
+    case "slash_active_qa":
+      return insertOnSlashActiveConflict(client, values, QA_SLASH_ACTIVE_CONFLICT_TARGET);
     case "ask_webhook": {
       const inserted = await client.query<{ id: string }>(
         `INSERT INTO agent_work_items (
@@ -423,6 +438,37 @@ export async function createDescriptionWorkItem(
     conflict: "none",
   });
   return insert.id;
+}
+
+export async function createQaWorkItem(
+  client: PoolClient,
+  params: {
+    readonly webhookEventId: string;
+    readonly ref: PrRef;
+    readonly userSupplement?: string;
+    readonly commenterId?: number;
+    readonly ackTargets?: readonly AckTarget[];
+  },
+): Promise<SlashActiveWorkInsertResult> {
+  const payload = {
+    source: "slash",
+    repositorySizeKb: params.ref.repositorySizeKb,
+    userSupplement: params.userSupplement,
+    commenterId: params.commenterId,
+    ...(params.ackTargets != null ? { ackTargets: params.ackTargets } : {}),
+  } satisfies QaWorkPayload;
+  return insertAgentWorkItem(client, {
+    id: crypto.randomUUID(),
+    webhookEventId: params.webhookEventId,
+    type: "qa",
+    source: "slash",
+    ref: params.ref,
+    reviewLens: null,
+    resourceKey: prResourceKey(params.ref.owner, params.ref.repo, params.ref.prNumber),
+    priority: 50,
+    payload,
+    conflict: "slash_active_qa",
+  });
 }
 
 export async function createTriageWorkItem(

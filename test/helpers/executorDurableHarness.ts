@@ -169,6 +169,10 @@ export function coreOf(item: AgentWorkItem): AgentWorkItemCore {
       const { payload: _payload, ...core } = item;
       return core;
     }
+    case "qa": {
+      const { payload: _payload, ...core } = item;
+      return core;
+    }
     default: {
       const exhaustive: never = item;
       return exhaustive;

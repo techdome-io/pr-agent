@@ -16,6 +16,7 @@ import {
 import { productionInstallationSurface, type InstallationSurface } from "./installationSurface.ts";
 import { createAskWorkExecution } from "./executors/askExecutor.ts";
 import { createDescriptionWorkExecution } from "./executors/descriptionExecutor.ts";
+import { createQaWorkExecution } from "./executors/qaExecutor.ts";
 import { createReviewWorkExecution } from "./executors/reviewExecutor.ts";
 import { createTriageWorkExecution } from "./executors/triageExecutor.ts";
 import { createVerificationWorkExecution } from "./executors/verificationExecutor.ts";
@@ -142,6 +143,15 @@ export function createWorkDefinitions(
         resolveHeadSha: resolveWorkItemHead,
       },
       createVerificationWorkExecution(executionDependencies),
+    ),
+    qa: define(
+      {
+        type: "qa",
+        concurrency: dependencies.cfg.concurrency.qa,
+        contextPolicy: { commenterId: (item) => item.payload.commenterId },
+        resolveHeadSha: resolveWorkItemHead,
+      },
+      createQaWorkExecution(executionDependencies),
     ),
   } satisfies { [T in WorkType]: DurableWorkDefinition<T> };
 }

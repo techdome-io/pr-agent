@@ -2,6 +2,7 @@ import type { Config, ReviewCancelAttribution } from "../settings/index.ts";
 import {
   ASK_QUEUE,
   DESCRIPTION_QUEUE,
+  QA_QUEUE,
   REVIEW_QUEUE,
   TRIAGE_QUEUE,
   VERIFICATION_QUEUE,
@@ -10,7 +11,7 @@ import type { CodeAnchor } from "../agent/ask/askRunTypes.ts";
 import type { ReviewMode } from "../review/reviewSchema.ts";
 import type { WorkSource } from "../review/reviewSchema.ts";
 
-export type WorkType = "review" | "ask" | "description" | "triage" | "verification";
+export type WorkType = "review" | "ask" | "description" | "triage" | "verification" | "qa";
 
 export const WORK_QUEUES = {
   review: REVIEW_QUEUE,
@@ -18,6 +19,7 @@ export const WORK_QUEUES = {
   description: DESCRIPTION_QUEUE,
   triage: TRIAGE_QUEUE,
   verification: VERIFICATION_QUEUE,
+  qa: QA_QUEUE,
 } as const satisfies Record<WorkType, string>;
 export const WORK_STATUSES = [
   "queued",
@@ -127,6 +129,11 @@ export type VerificationJobData = JobCorrelation & {
   readonly workItemId: string;
 };
 
+export type QaJobData = JobCorrelation & {
+  readonly kind: "qa";
+  readonly workItemId: string;
+};
+
 export type CiProjectionJobData = JobCorrelation & {
   readonly kind: "ci_projection";
   readonly installationId: number;
@@ -214,6 +221,14 @@ export type VerificationWorkPayload = {
   readonly publishDegraded?: boolean;
 };
 
+export type QaWorkPayload = {
+  readonly source: "slash";
+  readonly repositorySizeKb?: number;
+  readonly userSupplement?: string;
+  readonly commenterId?: number;
+  readonly ackTargets?: readonly AckTarget[];
+};
+
 type WorkItemBase = PrRef & {
   readonly id: string;
   readonly webhookEventId: string | null;
@@ -258,25 +273,35 @@ export type VerificationWorkItem = WorkItemBase & {
   readonly payload: VerificationWorkPayload;
 };
 
+export type QaWorkItem = WorkItemBase & {
+  readonly type: "qa";
+  readonly source: "slash";
+  readonly reviewLens: null;
+  readonly payload: QaWorkPayload;
+};
+
 export type AgentWorkItem =
   | ReviewWorkItem
   | AskWorkItem
   | DescriptionWorkItem
   | TriageWorkItem
-  | VerificationWorkItem;
+  | VerificationWorkItem
+  | QaWorkItem;
 
 type ReviewWorkItemCore = Omit<ReviewWorkItem, "payload">;
 type AskWorkItemCore = Omit<AskWorkItem, "payload">;
 type DescriptionWorkItemCore = Omit<DescriptionWorkItem, "payload">;
 type TriageWorkItemCore = Omit<TriageWorkItem, "payload">;
 type VerificationWorkItemCore = Omit<VerificationWorkItem, "payload">;
+type QaWorkItemCore = Omit<QaWorkItem, "payload">;
 
 export type AgentWorkItemCore =
   | ReviewWorkItemCore
   | AskWorkItemCore
   | DescriptionWorkItemCore
   | TriageWorkItemCore
-  | VerificationWorkItemCore;
+  | VerificationWorkItemCore
+  | QaWorkItemCore;
 
 export function isWorkItemType<T extends WorkType>(
   item: AgentWorkItem,

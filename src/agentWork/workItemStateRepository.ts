@@ -26,7 +26,7 @@ type AgentWorkRow = {
   pr_number: number;
   installation_id: string;
   head_sha: string;
-  review_lens: AnyReviewLens | "description" | "ask" | "triage" | "verification" | null;
+  review_lens: AnyReviewLens | "description" | "ask" | "triage" | "verification" | "qa" | null;
   resource_key: string;
   attempt_count: number;
   payload: unknown;
@@ -108,6 +108,17 @@ function mapWorkItemCore(row: Omit<AgentWorkRow, "payload">): AgentWorkItemCore 
         ...base,
         type: "verification",
         source: row.source,
+        reviewLens: null,
+      };
+    }
+    case "qa": {
+      if (row.source !== "slash") {
+        invalidWorkItemRow(row, `expected source "slash", got "${row.source}"`);
+      }
+      return {
+        ...base,
+        type: "qa",
+        source: "slash",
         reviewLens: null,
       };
     }
@@ -382,7 +393,7 @@ export async function markLostRunningWorkFailed(
         client,
         `SELECT resource_key, type FROM agent_work_items
           WHERE id = $1
-            AND type IN ('review', 'description', 'triage', 'verification')
+            AND type IN ('review', 'description', 'triage', 'verification', 'qa')
             AND status = 'running' AND cancel_requested_at IS NULL`,
         [id],
       );
@@ -413,7 +424,7 @@ export async function markLostRunningWorkFailed(
         to: "failed",
         unlessCancelRequested: true,
         lastError: "worker_lost",
-        where: (bind) => `AND w.type IN ('review', 'description', 'triage', 'verification')
+        where: (bind) => `AND w.type IN ('review', 'description', 'triage', 'verification', 'qa')
             AND w.started_at IS NOT NULL
             AND w.started_at < statement_timestamp() - (${bind(minAgeSeconds)} * interval '1 second')
             ${lostRunningWorkLivenessSql("statement_timestamp()")}`,

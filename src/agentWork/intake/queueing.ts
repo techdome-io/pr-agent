@@ -6,6 +6,7 @@ import {
   ACK_QUEUE,
   ASK_QUEUE,
   DESCRIPTION_QUEUE,
+  QA_QUEUE,
   REVIEW_QUEUE,
   TRIAGE_QUEUE,
   VERIFICATION_QUEUE,
@@ -17,6 +18,7 @@ import {
   type DescriptionJobData,
   type JobCorrelation,
   type PrRef,
+  type QaJobData,
   type ReviewJobData,
   type TriageJobData,
   type VerificationJobData,
@@ -139,6 +141,17 @@ export async function enqueueDescription(
     ...correlation,
   };
   await enqueueLeasedWork(boss, client, ref, DESCRIPTION_QUEUE, data);
+}
+
+export async function enqueueQa(
+  boss: PgBoss,
+  client: PoolClient,
+  ref: PrRef,
+  workItemId: string,
+  correlation: JobCorrelation,
+): Promise<void> {
+  const data: QaJobData = { kind: "qa", workItemId, ...correlation };
+  await enqueueLeasedWork(boss, client, ref, QA_QUEUE, data);
 }
 
 export async function enqueueTriage(

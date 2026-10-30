@@ -258,6 +258,7 @@ const POSTHOG_SAFE_PHASES = new Set([
   "description",
   "triage",
   "verification",
+  "qa",
 ]);
 
 export function posthogSafePhase(phase: string | undefined): string | undefined {

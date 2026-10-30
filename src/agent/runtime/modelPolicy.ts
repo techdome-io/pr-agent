@@ -38,6 +38,7 @@ export function modelAssignmentForRole(
     case "description":
     case "triage":
     case "verification":
+    case "qa":
     case "ci_summary":
       return policy.generalPrimary;
     default: {

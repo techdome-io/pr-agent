@@ -10,6 +10,7 @@ import { fenceForEpoch, type WriteFence } from "./writeFence.ts";
 import {
   ASK_PUBLISH_LENS,
   DESCRIPTION_PUBLISH_LENS,
+  QA_PUBLISH_LENS,
   TRIAGE_PUBLISH_LENS,
   VERIFICATION_PUBLISH_LENS,
   type AnyReviewLens,
@@ -139,6 +140,10 @@ export function triageThreadOperationKey(rootCommentId: number): string {
 
 export function triageReportOperationKey(resourceKey: string): string {
   return `triage:report:${resourceKey}`;
+}
+
+export function qaReportOperationKey(resourceKey: string): string {
+  return `qa:report:${resourceKey}`;
 }
 
 export function triagePreviewOperationKey(resourceKey: string): string {
@@ -687,7 +692,8 @@ export type PublishLens =
   | typeof DESCRIPTION_PUBLISH_LENS
   | typeof ASK_PUBLISH_LENS
   | typeof TRIAGE_PUBLISH_LENS
-  | typeof VERIFICATION_PUBLISH_LENS;
+  | typeof VERIFICATION_PUBLISH_LENS
+  | typeof QA_PUBLISH_LENS;
 type SharedPublishLens = Exclude<PublishLens, typeof ASK_PUBLISH_LENS>;
 export type PublishStep = keyof typeof publishStepSpecs;
 type SharedPublishStep = Exclude<PublishStep, "ask_reply" | "check_run">;
@@ -923,6 +929,7 @@ export const publishStepSpecs = {
   ci_cell: { scope: "resource", merge: "replace" },
   commit_status: { scope: "resource", merge: "replace" },
   verification_failure: { scope: "resource", merge: "replace" },
+  qa_report: { scope: "resource", merge: "replace" },
 } as const satisfies Record<string, PublishStepSpec>;
 
 export type PublishStepSpec = {

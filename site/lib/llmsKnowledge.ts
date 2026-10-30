@@ -25,6 +25,7 @@ export const FEATURE_KEYS = [
   "FEATURE_REVIEW_LABELS",
   "FEATURE_COMMIT_STATUS",
   "FEATURE_TITLE_REWRITE",
+  "FEATURE_QA",
 ] as const;
 
 export type KnowledgeTopic =
@@ -167,6 +168,7 @@ export const KNOWLEDGE_CHUNKS: readonly KnowledgeChunk[] = [
       "/triage: apply-mode fix for open bot findings. The report stamps a CI rollup marker the projector patches. /triage preview renders would-be diffs without push. /triage all replays those stored hunks (refused without a matching preview on this head).",
       "/triage preview: render the would-be unified diff. No commits, no push.",
       "/triage all: replay the stored preview hunks (optional exclude <thread ids>). Refused without a matching preview on this head. Does not start a second agent run.",
+      "/qa: build the pull request head in a throwaway Docker sandbox from .pr-agent/qa.md on the base branch, call its API as each configured test user, and upsert ## PR Agent QA with pass, fail, or blocked checks. Same-repo pull requests only. Advisory: no check run or commit status.",
       "/cancel: cancel a queued or running orchestrated review. The final publication check rereads durable cancellation and blocks new review output when it is visible. Requests already in flight cannot be withdrawn. The cancellation notice and check closure still run.",
       "/verify: recheck open findings against the current pull request head.",
       "/help: list available commands.",
@@ -178,7 +180,7 @@ export const KNOWLEDGE_CHUNKS: readonly KnowledgeChunk[] = [
     terms: ["feature", "flag", "setting", "mode", "auto", "manual", "token", ...FEATURE_KEYS],
     body: lines([
       "Nine FEATURE_* settings are the user-facing configuration. Invalid values fail startup.",
-      "Describe and verification: off = disabled (slash replies with a notice), manual = slash only, auto = slash plus a fixed trigger. FEATURE_ASK and FEATURE_TRIAGE accept only off or manual. auto crashes startup. FEATURE_REVIEW accepts manual, auto, or approval. off crashes startup. FEATURE_REVIEW_CADENCE accepts once or every_push. every_push together with FEATURE_REVIEW=manual crashes startup.",
+      "Describe and verification: off = disabled (slash replies with a notice), manual = slash only, auto = slash plus a fixed trigger. FEATURE_ASK, FEATURE_TRIAGE, and FEATURE_QA accept only off or manual. auto crashes startup. FEATURE_REVIEW accepts manual, auto, or approval. off crashes startup. FEATURE_REVIEW_CADENCE accepts once or every_push. every_push together with FEATURE_REVIEW=manual crashes startup.",
       "Auto triggers: review and describe on pull_request opened; verification on synchronize. With FEATURE_REVIEW=approval, trusted PRs are reviewed on open: same-repo head or OWNER, MEMBER, or COLLABORATOR author. A fork author associated as CONTRIBUTOR, NONE, FIRST_TIME_CONTRIBUTOR, or FIRST_TIMER waits for a pull request approval or /review. A workflow start does not admit that fork. Missing association or a deleted fork is untrusted. Other untrusted forks receive one awaiting notice. The first pull_request workflow_run in_progress on the awaiting head admits the row when workflow start admission is true. An approving PR review from a non-bot in SLASH_ALLOWED_ASSOCIATIONS, or /review, approves it once. Completed, push, and pull_request_target runs never approve. Later signals do nothing. No backfill for already-open PRs; use /review. once is the default: a push after the review finishes does not re-review. every_push also starts a review for each later push to an open admitted pull request. A running /review finishes, and one follow-up then reviews the newest head. A push never cancels a slash review.",
       `${FEATURE_KEYS[0]}: manual | auto | approval. Default approval. Orchestrated review. approval reviews trusted opens and holds untrusted forks for maintainer approval. A fork author associated as CONTRIBUTOR, NONE, FIRST_TIME_CONTRIBUTOR, or FIRST_TIMER is maintainer-only. auto reviews every open and does not check trust. Trusted opens now spend review tokens; manual opts out. /review is available in every mode on open PRs.`,
       `${FEATURE_KEYS[1]}: once | every_push. Default once. every_push reviews each later admitted push and crashes startup with FEATURE_REVIEW=manual. An audit of this repository's last 60 merged pull requests counted 74 reviewed heads and 154 distinct CI-run head SHAs, about 2.1 times once volume. That audit was not remeasured. Supersede collapses a burst onto one head. FEATURE_VERIFICATION=off never auto-resolves fixed threads, and a later review can still fail the check on findings that are already fixed.`,
@@ -191,6 +193,7 @@ export const KNOWLEDGE_CHUNKS: readonly KnowledgeChunk[] = [
       `${FEATURE_KEYS[7]}: false | true. Default false. Posts pr-agent/review: pending when admitted review work starts, independently of Checks access; success or failure from published findings; error on cancel, crash, stale head, unpublished, or partial coverage. No model tokens.`,
       "Concurrent attempts to finish a review keep the first verdict. A later cancellation or recovery does not replace it. The check and optional commit status use that same verdict. Ambiguous publication stays fail-closed.",
       `${FEATURE_KEYS[8]}: false | true. Default true. Allows /describe to rewrite the PR title using make-pr default title rules. Set false to keep the existing title.`,
+      `${FEATURE_KEYS[9]}: off | manual. Default off. /qa runs pull request code in a throwaway Docker sandbox on the worker host and reports pass, fail, or blocked checks. Needs QA_DOCKER_SOCKET and .pr-agent/qa.md on the base branch. Spends model tokens per run.`,
       "Landing-page capability copy:",
       ...CAPABILITIES.map((item) => `- ${item.title}. ${item.trigger}. ${item.detail}`),
       "Landing-page review flow copy:",

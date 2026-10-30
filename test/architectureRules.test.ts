@@ -57,6 +57,7 @@ const SOURCE_RULES: SourceRule[] = [
     allowedPaths: [
       "src/review/publish/reviewSummaryComment.ts",
       "src/agent/triage/publishTriage.ts",
+      "src/agent/qa/publishQa.ts",
     ],
   },
 ];

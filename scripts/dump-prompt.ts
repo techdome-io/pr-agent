@@ -19,6 +19,8 @@ import {
   renderOrchestratorSummaryRepair,
 } from "../src/prompts/orchestrator/prompt.ts";
 import { automatedQualitySystemPrompt } from "../src/prompts/quality/prompt.ts";
+import { qaSystemPrompt } from "../src/prompts/qa/prompt.ts";
+import { qaNativePiTools } from "../src/agent/qa/qaRun.ts";
 import { automatedReviewTestsSystemPrompt } from "../src/prompts/tests/prompt.ts";
 import { automatedSecuritySystemPrompt } from "../src/prompts/security/prompt.ts";
 import {
@@ -243,6 +245,7 @@ async function dumpAll() {
         verification: "off",
         ask: "off",
         triage: "off",
+        qa: "off",
         reviewLabels: "off",
         commitStatus: false,
         titleRewrite: false,
@@ -308,6 +311,7 @@ async function dumpAll() {
       description: descriptionSystemPrompt,
       triage: triageSystemPrompt,
       verification: verificationSystemPrompt,
+      qa: qaSystemPrompt,
       ciSummary: CI_SUMMARY_SYSTEM_PROMPT,
       boundPolicyJudge: BOUND_POLICY_JUDGE_SYSTEM_PROMPT,
     },
@@ -332,6 +336,7 @@ async function dumpAll() {
         }).piTools,
         verification,
       ],
+      qa: [...local.piTools, ...qaNativePiTools()],
       ciSummary: [],
       boundPolicyJudge: [],
     },

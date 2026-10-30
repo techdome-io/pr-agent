@@ -8,6 +8,7 @@ import {
   DEFAULT_POSTHOG_HOST,
   DEFAULT_POSTHOG_PROJECT_TOKEN,
   DEFAULT_PORT,
+  DEFAULT_QA_DOCKER_SOCKET,
   DEFAULT_REVIEW_SPECIALIST_TIMEOUT_MS,
   DEFAULT_ROLE,
 } from "../defaults.ts";
@@ -49,6 +50,10 @@ export type ReviewSlice = {
 
 export type Context7Slice = {
   readonly apiKey: string;
+};
+
+export type QaSlice = {
+  readonly dockerSocket: string;
 };
 
 export type PosthogSlice = {
@@ -103,6 +108,10 @@ export function readReviewSlice(): ReviewSlice {
 
 export function readContext7Slice(): Context7Slice {
   return { apiKey: optionalEnv(ENV.CONTEXT7_API_KEY, DEFAULT_CONTEXT7_API_KEY) };
+}
+
+export function readQaSlice(): QaSlice {
+  return { dockerSocket: optionalEnv(ENV.QA_DOCKER_SOCKET, DEFAULT_QA_DOCKER_SOCKET).trim() };
 }
 
 export function readPosthogSlice(): PosthogSlice {

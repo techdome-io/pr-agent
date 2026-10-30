@@ -42,6 +42,13 @@ compare normalized titles and details.
    constants, tool definitions, validators, and renderers do not change. This
    is the exception to ADR 0047's "no unenforced caps" rule, and it covers
    output prose only.
+8. `communicationGuidance` adds a "Reading a finding" block. Live reviews
+   showed finding details written as one long sentence with several code names
+   and no stated user impact. The block asks for the consequence first, in
+   everyday words, one code name and about 20 words per sentence, the affected
+   role named in place of the call path, and project terms explained once. It
+   adds one weak and one strong example. Like decision 7, these are prompt
+   guidance and not enforced limits.
 
 ### Failure modes
 

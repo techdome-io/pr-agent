@@ -84,6 +84,50 @@ function parseTreeRecord(
   return { mode, blobSha, path };
 }
 
+export type BaseFileSnapshot =
+  | { readonly kind: "ok"; readonly body: string }
+  | { readonly kind: "absent" }
+  | {
+      readonly kind: "unavailable";
+      readonly reason: "base_unavailable" | "over_cap" | "read_failed";
+    };
+
+export async function readBaseFile(params: {
+  readonly snapshot: PolicySnapshot;
+  readonly path: string;
+  readonly maxBytes: number;
+  readonly git: WorkspaceGit;
+  readonly timeoutMs: number;
+}): Promise<BaseFileSnapshot> {
+  if (params.snapshot.kind === "unavailable") {
+    return { kind: "unavailable", reason: "base_unavailable" };
+  }
+  try {
+    const listed = await params.git(
+      ["ls-tree", "-z", POLICY_BASE_REF, "--", params.path],
+      params.timeoutMs,
+    );
+    const record = listed.stdout.split("\0").find((line) => line.length > 0);
+    const entry = record == null ? null : parseTreeRecord(record);
+    if (entry == null || entry.path !== params.path) return { kind: "absent" };
+    if (!REGULAR_FILE_MODES.has(entry.mode)) return { kind: "absent" };
+    const sized = await params.git(["cat-file", "-s", entry.blobSha], params.timeoutMs);
+    const size = Number(sized.stdout.trim());
+    if (!Number.isSafeInteger(size) || size < 0 || size > params.maxBytes) {
+      return { kind: "unavailable", reason: "over_cap" };
+    }
+    const body = await params.git(["cat-file", "blob", entry.blobSha], params.timeoutMs);
+    return { kind: "ok", body: body.stdout };
+  } catch (error) {
+    const failureKind = workspaceGitFailureKind(error);
+    logWarn("base_file_read_failed", {
+      path: params.path,
+      ...(failureKind ? { failureKind } : {}),
+    });
+    return { kind: "unavailable", reason: "read_failed" };
+  }
+}
+
 export async function readBasePolicySnapshot(params: {
   readonly baseSha: string | undefined;
   readonly git: WorkspaceGit;
